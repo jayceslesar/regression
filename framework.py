@@ -24,6 +24,12 @@ class Model:
             self.beta_hats = self.beta_hats_all[1:]
             self.ssr = self._get_ss_resid_()
 
+    def __predict__(self, xvals):
+        pred = self.beta_zero
+        for x in range(len(xvals)):
+            pred += xvals[x] + self.beta_hats[x]
+        return pred
+
     def __str__(self):
         print("SSR: " + str(self.ssr))
         out = str(self.beta_zero)
