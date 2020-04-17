@@ -5,10 +5,11 @@ import pandas as pd
 class Model:
     def __init__(self, predictors, y, DataFrame):
         self.cleaned_data = self._clean_(y, DataFrame)
-        cols = self.cleaned_data.drop(y, axis=1).columns
-        to_drop = [col for col in cols if col not in predictors]
+        self.all_columns = self.cleaned_data.drop(y, axis=1).columns
+        to_drop = [col for col in self.all_columns if col not in predictors]
         if len(to_drop) != 0:
             self.cleaned_data = self.cleaned_data.drop(to_drop, axis=1)
+        self.columns = self.cleaned_data.drop(y, axis=1).columns
         self.x = self.cleaned_data.drop(y, axis=1).values
         self.y = np.round(np.asarray(self.cleaned_data[y].values), 4)
 
@@ -22,7 +23,12 @@ class Model:
             self.beta_hats_all = self._beta_hat_matrix_(self.x, self.y)
             self.beta_zero = self.beta_hats_all[0]
             self.beta_hats = self.beta_hats_all[1:]
-            self.ssr = self._get_ss_resid_()
+            self.sse = self._get_ss_error_()
+            self.sse_df = self.n - len(self.beta_hats_all)
+            self.mse = np.round(self.sse/self.sse_df, 4)
+            self.ssr = self._get_ss_regression_()
+            self.sst = self.sse + self.ssr
+            self._get_var_ss_()
 
     def __predict__(self, xvals):
         pred = self.beta_zero
@@ -31,12 +37,18 @@ class Model:
         return pred
 
     def __str__(self):
-        print("SSR: " + str(self.ssr))
-        out = str(self.beta_zero)
+        out = 'MODEL: '
+        out += str(self.beta_zero)
         i = 1
         for beta_hat in self.beta_hats:
             out += " + X" + str(i) + '*' + str(beta_hat)
             i += 1
+        out += '\n'
+        out += '--------------------------------------\n'
+        pretty_sse = f"SSE: {self.sse_df}  {self.sse}\n"
+        out += pretty_sse
+        pretty_ssr = f"SSR: {self.k}  {self.ssr}"
+        out += pretty_ssr
         return out
 
     def _clean_(self, y, DataFrame):
@@ -57,15 +69,24 @@ class Model:
         beta_hats = np.round(np.linalg.inv(X.transpose().dot(X)).dot(X.transpose()).dot(y), 4)
         return beta_hats
 
-    def _get_ss_resid_(self):
-        y_hats = np.round(self._predict_for_ss(), 4)
-        ssr = 0
+    def _get_ss_error_(self):
+        y_hats = np.round(self._predict_for_ss_(), 4)
+        sse = 0
         for i in range(len(y_hats)):
-            ssr += (y_hats[i] - self.y[i])**2
+            sse += (y_hats[i] - self.y[i])**2
+        sse = np.round(sse, 4)
+        return sse
+
+    def _get_ss_regression_(self):
+        y_hats = np.round(self._predict_for_ss_(), 4)
+        ssr = 0
+        y_hat_bar = np.mean(y_hats)
+        for i in range(len(y_hats)):
+            ssr += (y_hats[i] - y_hat_bar)**2
         ssr = np.round(ssr, 4)
         return ssr
 
-    def _predict_for_ss(self):
+    def _predict_for_ss_(self):
         preds = []
         for row in self.x:
             i = 0
@@ -76,8 +97,13 @@ class Model:
             preds.append(row_sum + self.beta_zero)
         return preds
 
-
-
+    def _get_var_ss_(self):
+        # ss = [i for i in range(len(self.x[0]))]
+        # for i in range(len(ss)):
+        #     for row in range(len(self.x)):
+        #         ss[i] += (self.y[i] - (self.beta_hats[i]*self.x[row][i] + self.beta_zero))
+        # print(ss)
+        return 1
 
     #  TODO: matrix represenation probably
     #  TODO: all r values
