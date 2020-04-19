@@ -3,16 +3,26 @@ import pandas as pd
 
 
 class Model:
-    def __init__(self, predictors, y, DataFrame):
+    def __init__(self, predictors, y, DataFrame, fix_order, var_ss_flag):
+        self.multiple = False
+        if len(predictors) > 1:
+            self.multiple = True
+        self.y_name = y
         self.predictors = predictors
-        self.cleaned_data = self._clean_(y, DataFrame)
-        self.all_columns = self.cleaned_data.drop(y, axis=1).columns
+        self.df = self._clean_(y, DataFrame)
+        if fix_order:
+            self.df_in_order = pd.DataFrame()
+            for pred in predictors:
+                self.df_in_order[pred] = self.df[pred]
+            self.df_in_order[y] = self.df[y]
+            self.df = self.df_in_order
+        self.all_columns = self.df.drop(y, axis=1).columns
         to_drop = [col for col in self.all_columns if col not in predictors]
         if len(to_drop) != 0:
-            self.cleaned_data = self.cleaned_data.drop(to_drop, axis=1)
-        self.columns = self.cleaned_data.drop(y, axis=1).columns
-        self.x = self.cleaned_data.drop(y, axis=1).values
-        self.y = np.round(np.asarray(self.cleaned_data[y].values), 4)
+            self.df = self.df.drop(to_drop, axis=1)
+        self.columns = self.df.drop(y, axis=1).columns
+        self.x = self.df.drop(y, axis=1).values
+        self.y = np.round(np.asarray(self.df[y].values), 4)
 
         # TODO: outliers
         self.assumptions = True  # TODO: [5 assumptions function defined above]
@@ -20,7 +30,7 @@ class Model:
             print("Assumptions failed")
             pass
         else:
-            self.n = self.y.size
+            self.n = len(self.df)
             self.k = len(predictors)
             self.beta_hats_all = self._beta_hat_matrix_(self.x, self.y)
             self.beta_zero = self.beta_hats_all[0]
@@ -30,7 +40,8 @@ class Model:
             self.mse = np.round(self.sse/self.sse_df, 4)
             self.ssr = self._get_ss_regression_()
             self.sst = self.sse + self.ssr
-            self._get_var_ss_()
+            if self.multiple and var_ss_flag:
+                self.var_ss_in_order = self._get_var_ss_()
 
     def __predict__(self, xvals):
         pred = self.beta_zero
@@ -47,10 +58,16 @@ class Model:
             i += 1
         out += '\n'
         out += '--------------------------------------\n'
-        pretty_sse = f"SSE: {self.sse_df}  {self.sse}\n"
-        out += pretty_sse
-        pretty_ssr = f"SSR: {self.k}  {self.ssr}"
+        pretty_ssr = f"SS[regression]: {self.k}  {self.ssr}\n"
         out += pretty_ssr
+        if self.multiple:
+            for i in range(len(self.var_ss_in_order)):
+                ss = '{:.4f}'.format(round(self.var_ss_in_order[i], 4))
+                out += f"\tSS[{self.predictors[i]}]: {1}  {ss}\n"
+        pretty_sse = f"SS[error/residuals]: {self.sse_df}  {self.sse}\n"
+        out += pretty_sse
+        pretty_sst = f"SS[total]: {self.n - 1}  {self.sst}\n"
+        out += pretty_sst
         return out
 
     def _clean_(self, y, DataFrame):
@@ -64,7 +81,8 @@ class Model:
 
     def _beta_hat_matrix_(self, X, y):
         # one predictor case
-        if len(X) == 1: return X.reshape(-1, 1)
+        if np.shape(X)[0] == 1:
+            X = X.reshape(-1, 1)
         # add the one vector
         X = np.concatenate((np.ones(shape=X.shape[0]).reshape(-1, 1), X), 1)
         # beta hat matrix (0th indeth is B0) - will have len(2) minimum
@@ -72,7 +90,7 @@ class Model:
         return beta_hats
 
     def _get_ss_error_(self):
-        y_hats = np.round(self._predict_for_ss_(), 4)
+        y_hats = np.round(self._ss_regression_helper_(), 4)
         sse = 0
         for i in range(len(y_hats)):
             sse += (y_hats[i] - self.y[i])**2
@@ -100,12 +118,19 @@ class Model:
         return preds
 
     def _get_var_ss_(self):
-        ss = []
-        for predictor in self.predictors:
-            pass
+        ss, curr_preds = []
+        i = 0
+        for pred in self.predictors:
+            curr_preds.append(pred)
+            curr_model = Model(curr_preds, self.y_name, self.df, False, False)
+            if i == 0:
+                ss.append(curr_model.ssr)
+                i += 1
+                continue
+            ss.append(curr_model.ssr - sum(ss))
+            i += 1
         return ss
 
-    #  TODO: matrix represenation probably
     #  TODO: all r values
     #  TODO: all hypothesis tests, formmated to work with size n predictors
     #  TODO: cofounding
