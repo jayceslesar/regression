@@ -118,7 +118,7 @@ class Model:
         return preds
 
     def _get_var_ss_(self):
-        ss, curr_preds = []
+        ss, curr_preds = [], []
         i = 0
         for pred in self.predictors:
             curr_preds.append(pred)
