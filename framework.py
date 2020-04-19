@@ -4,6 +4,7 @@ import pandas as pd
 
 class Model:
     def __init__(self, predictors, y, DataFrame):
+        self.predictors = predictors
         self.cleaned_data = self._clean_(y, DataFrame)
         self.all_columns = self.cleaned_data.drop(y, axis=1).columns
         to_drop = [col for col in self.all_columns if col not in predictors]
@@ -17,6 +18,7 @@ class Model:
         self.assumptions = True  # TODO: [5 assumptions function defined above]
         if not self.assumptions:
             print("Assumptions failed")
+            pass
         else:
             self.n = self.y.size
             self.k = len(predictors)
@@ -78,7 +80,7 @@ class Model:
         return sse
 
     def _get_ss_regression_(self):
-        y_hats = np.round(self._predict_for_ss_(), 4)
+        y_hats = np.round(self._ss_regression_helper_(), 4)
         ssr = 0
         y_hat_bar = np.mean(y_hats)
         for i in range(len(y_hats)):
@@ -86,7 +88,7 @@ class Model:
         ssr = np.round(ssr, 4)
         return ssr
 
-    def _predict_for_ss_(self):
+    def _ss_regression_helper_(self):
         preds = []
         for row in self.x:
             i = 0
@@ -98,12 +100,10 @@ class Model:
         return preds
 
     def _get_var_ss_(self):
-        # ss = [i for i in range(len(self.x[0]))]
-        # for i in range(len(ss)):
-        #     for row in range(len(self.x)):
-        #         ss[i] += (self.y[i] - (self.beta_hats[i]*self.x[row][i] + self.beta_zero))
-        # print(ss)
-        return 1
+        ss = []
+        for predictor in self.predictors:
+            pass
+        return ss
 
     #  TODO: matrix represenation probably
     #  TODO: all r values
