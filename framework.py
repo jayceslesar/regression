@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 
+# TODO: Remove redundancy, rename, reformat
 class Model:
     def __init__(self, predictors, y, DataFrame, fix_order, var_ss_flag):
         self.multiple = False
@@ -137,4 +138,4 @@ class Model:
     #  TODO: all hypothesis tests, formmated to work with size n predictors
     #  TODO: cofounding
     #  TODO: model optimizer (gets best models)
-    #  TODO: model saved (saves models to be used)
+    #  TODO: model saved (saves models to be used) (save all self. in a json to be reloaded)
