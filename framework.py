@@ -61,9 +61,10 @@ class Model:
         pretty_ssr = f"SS[regression]: {self.k}  {self.ssr}\n"
         out += pretty_ssr
         if self.multiple:
+            pred_len = len(max(self.predictors, key=len))
             for i in range(len(self.var_ss_in_order)):
                 ss = '{:.4f}'.format(round(self.var_ss_in_order[i], 4))
-                out += f"\tSS[{self.predictors[i]}]: {1}  {ss}\n"
+                out += '\t' + str("SS[" + str(self.predictors[i]) + "]:").rjust(pred_len + 4) + " 1 " + str(ss) + '\n'
         pretty_sse = f"SS[error/residuals]: {self.sse_df}  {self.sse}\n"
         out += pretty_sse
         pretty_sst = f"SS[total]: {self.n - 1}  {self.sst}\n"
