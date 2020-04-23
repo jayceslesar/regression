@@ -10,7 +10,6 @@ def main():
     y = 'SBP'
     lm = Model(x1x2x3, y, df, True, True)
     print(lm)
-    # print(lm.columns)
 
 
 if __name__ == "__main__":
