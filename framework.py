@@ -44,12 +44,6 @@ class Model:
             if self.multiple and var_ss_flag:
                 self.var_ss_in_order = self._get_var_ss_()
 
-    def __predict__(self, xvals):
-        pred = self.beta_zero
-        for x in range(len(xvals)):
-            pred += xvals[x] + self.beta_hats[x]
-        return pred
-
     def __str__(self):
         out = 'MODEL: '
         out += str(self.beta_zero)
@@ -72,6 +66,12 @@ class Model:
         pretty_sst = str(f"SS[total]: {self.n - 1}  {self.sst}\n")
         out += pretty_sst
         return out
+
+    def predict(self, xvals):
+        pred = self.beta_zero
+        for x in range(len(xvals)):
+            pred += xvals[x] + self.beta_hats[x]
+        return pred
 
     def _clean_(self, y, DataFrame):
         cleaned = DataFrame
