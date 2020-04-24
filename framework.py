@@ -169,5 +169,4 @@ class Model:
     #  TODO: all r values
     #  TODO: all hypothesis tests, formmated to work with size n predictors
     #  TODO: cofounding
-    #  TODO: model optimizer (gets best models)
-    #  TODO: model saved (saves models to be used) (save all self. in a json to be reloaded)
+    #  TODO: save a model functionality (save all self. in a json to be reloaded)
