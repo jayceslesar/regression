@@ -1,10 +1,12 @@
 import numpy as np
 import pandas as pd
+from itertools import chain, combinations
 
 
 # TODO: Remove redundancy, rename, reformat
 class Model:
     def __init__(self, predictors, y, DataFrame, fix_order, var_ss_flag):
+        self.DataFrame = DataFrame
         self.multiple = False
         if len(predictors) > 1:
             self.multiple = True
@@ -40,9 +42,13 @@ class Model:
             self.sse_df = self.n - len(self.beta_hats_all)
             self.mse = np.round(self.sse/self.sse_df, 4)
             self.ssr = self._get_ss_regression_()
-            self.sst = self.sse + self.ssr
+            self.sst = np.round(self.sse + self.ssr, 4)
             if self.multiple and var_ss_flag:
                 self.var_ss_in_order = self._get_var_ss_()
+
+            self.rsquared = self.ssr/self.sst
+            self.adjusted_rsquared = self._calc_adjusted_rsquared_()
+
 
     def __str__(self):
         out = 'MODEL: '
@@ -65,6 +71,8 @@ class Model:
         out += pretty_sse
         pretty_sst = str(f"SS[total]: {self.n - 1}  {self.sst}\n")
         out += pretty_sst
+        pretty_adjusted_rsquared = f"R^2: {self.adjusted_rsquared}\n"
+        out += pretty_adjusted_rsquared
         return out
 
     def predict(self, xvals):
@@ -133,6 +141,30 @@ class Model:
             ss.append(curr_model.ssr - sum(ss))
             i += 1
         return ss
+
+    def _calc_adjusted_rsquared_(self):
+        adjusted_rsquared = ((1 - self.rsquared)*(self.n - 1))/ self.n - self.k - 1
+        adjusted_rsquared = 1 - adjusted_rsquared
+        return np.round(adjusted_rsquared, 4)
+
+    def autobest(self):
+        print('Finding the best model...')
+        best_model = None
+        models = []
+        model_preds = []
+        all_combos = chain(*map(lambda x: combinations(self.predictors, x), range(0, len(self.predictors)+1)))
+        print('Predictors, Adjusted-R^2')
+        for model in all_combos:
+            if len(list(model)) == 0:
+                continue
+            preds = list(model)
+            model_preds.append(preds)
+            adjr = Model(list(model), self.y_name, self.DataFrame, True, True).adjusted_rsquared
+            models.append(adjr)
+            print(preds, adjr)
+        print(str(model_preds[models.index(max(models))]) + ' are the best predictors.')
+        return Model(model_preds[models.index(max(models))], self.y_name, self.DataFrame, True, True)
+
 
     #  TODO: all r values
     #  TODO: all hypothesis tests, formmated to work with size n predictors
